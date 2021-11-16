@@ -122,7 +122,7 @@ int main()
     gettimeofday(&tval_after, NULL);
     timersub(&tval_after, &tval_before, &tval_result);
     
-    printf("%ld.%06ld\n", (long int)tval_result.tv_sec, (long int)tval_result.tv_usec);
+    printf("t: %ld.%06ld\n", (long int)tval_result.tv_sec, (long int)tval_result.tv_usec);
     
     free(nameOutput);
     free(name);
