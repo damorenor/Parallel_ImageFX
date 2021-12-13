@@ -15,7 +15,7 @@
 /*******************************************************************************/
 
 __global__ void
-vectorAdd(const int *A, int *B, int numElements, int width)
+vectorAdd(const int *A, char *B, int numElements, int width)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     int aux = 0;
@@ -26,7 +26,7 @@ vectorAdd(const int *A, int *B, int numElements, int width)
     {    
         aux = A[(i*width*3)+ p]* -1 + A[(i*width*3)+p+3] * 0 + A[(i*width*3)+p+6] * 1 + A[(i+1)*width*3 + p]* -2 + A[(i+1)*width*3 + p+3] * 0 + A[(i+1)*width*3 + p+6] * 2 + A[(i+2)*(width*3) + p]* -1 + A[(i+2)*(width*3) + p+3] * 0 + A[(i+2)*(width*3) + p+6] * 1;
         aux2 = A[(i*width*3) + p]* -1 + A[(i*width*3) + p+3] * -2 + A[(i*width*3)+p+6] * -1 + A[(i+1)*width*3 + p]* 0 + A[(i+1)*width*3 + p+3] * 0 + A[(i+1)*width*3 + p+6] * 0 + A[(i+2)*(width*3) + p]* 1 + A[(i+2)*(width*3) + p+3] * 2 + A[(i+2)*(width*3) + p+6] * 1;
-        B[p+(i*width*3)] = (int) sqrt((float)(aux*aux + aux2*aux2));
+        B[p+(i*width*3)] = (char) sqrt((float)(aux*aux + aux2*aux2));
         //printf("hilo %d : %d %d %d %d %d %d %d %d %d con resultado x %d y %d = %d en la posición: %d\n",i, A[(i*width*3)+ p], A[(i*width*3)+p+3], A[(i*width*3)+p+6], A[(i+1)*width*3 + p], A[(i+1)*width*3 + p+3], A[(i+1)*width*3 + p+6], A[(i+2)*(width*3) + p], A[(i+2)*(width*3)+p+3], A[(i+2)*(width*3)+p+6],aux,aux2,B[p+(i*width*3)],p+(i*width*3));
         aux=0;
         aux2 = 0;
@@ -51,6 +51,7 @@ int main(void)
     if(kernel != 3 && kernel != 5){
         exit(1);
     }
+    gettimeofday(&tval_before, NULL);    
     unsigned char *img = stbi_load(name, &width, &height, &channels, 3);
     if(img == NULL){
         printf("Error al Cargar Imagen: ");
@@ -71,7 +72,7 @@ int main(void)
     int *h_A = (int *)malloc(size);
 
     // Allocate the host input vector B
-    int *h_B = (int *)malloc(size);
+    char *h_B = (char *)malloc(size);
 
     // Verify that allocations succeeded
     if (h_A == NULL || h_B == NULL)
@@ -81,10 +82,13 @@ int main(void)
     }
 
     // Initialize the host input vectors
-    for (int i = 0; i < numElements; ++i)
+    for (int i = 0; i < numElements; i+=3)
     {
         //printf("%d ",img[i]);
-        h_A[i] = img[i];
+        int t = img[i]*0.299 + img[i+1]*0.587 + img[i+2]*0.114;
+        h_A[i] = t;
+        h_A[i+1] = t;
+        h_A[i+2] = t;
     }
     
     // Allocate the device input vector A
@@ -98,7 +102,7 @@ int main(void)
     }
 
     // Allocate the device input vector B
-    int *d_B = NULL;
+    char *d_B = NULL;
     err = cudaMalloc((void **)&d_B, size);
 
     if (err != cudaSuccess)
@@ -159,11 +163,11 @@ int main(void)
         fprintf(stderr, "Failed to free device vector B (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
-    for (int i = 0; i < numElements; ++i)
+    /*for (int i = 0; i < numElements; ++i)
     {
         //printf("%d ",img[i]);
         img2[i] = h_B[i];
-    }
+    }*/
     /*for (int i = 0; i < numElements; ++i)
     {
         printf("%d ", h_B[i]);
@@ -178,11 +182,11 @@ int main(void)
         fprintf(stderr, "Failed to deinitialize the device! error=%s\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
-    stbi_write_jpg(nameOutput, width, height, channels, img2, 100);
+    stbi_write_jpg(nameOutput, width, height, channels, h_B, 100);
     gettimeofday(&tval_after, NULL);
     timersub(&tval_after, &tval_before, &tval_result);
     
-    printf("t: %ld.%06ld\n", (long int)tval_result.tv_sec, (long int)tval_result.tv_usec);
+    printf("t: %ld.%06lld\n", (long int)tval_result.tv_sec, (long long int)tval_result.tv_usec);
     
     free(nameOutput);
     free(name);
