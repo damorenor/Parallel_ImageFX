@@ -17,10 +17,23 @@
 __global__ void
 vectorAdd(const int *A, char *B, int numElements, int width, int kernelSize)
 {
-    int k;
+    int k = kernelSize;
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     int aux = 0;
     int aux2 = 0;
+    int t = 0;
+    for (int p = 0; p < (width*3); p+=3)
+    {
+      if (i < numElements)
+      {    
+        t = A[(i*width*3)+ p]*0.299 + A[(i*width*3)+ p+1]*0.587 + A[(i*width*3)+ p+2]*0.114;
+        A[(i*width*3)+ p] = t;
+        A[(i*width*3)+ p+1] = t;
+        A[(i*width*3)+ p+2] = t;
+        t = 0;
+      }
+    }
+
    for(int p = 0; p < (width*3); p++)
    {
     if (i < numElements)
@@ -58,7 +71,6 @@ vectorAdd(const int *A, char *B, int numElements, int width, int kernelSize)
 /*******************************************************************************/
 int main(void)
 {
-    //char *img2;
     char *name;
     char *nameOutput;
     int width, height, channels, kernel;
@@ -87,33 +99,19 @@ int main(void)
     // Print the vector length to be used, and compute its size
     int numElements = pixel_row_num*height;
     size_t size = numElements * sizeof(int);
-    //img2 = (char *) malloc(numElements*sizeof(char));
-
-    // Allocate the host input vector A
-    int *h_A = (int *)malloc(size);
 
     // Allocate the host input vector B
     char *h_B = (char *)malloc(size);
 
     // Verify that allocations succeeded
-    if (h_A == NULL || h_B == NULL)
+    if (h_B == NULL)
     {
         fprintf(stderr, "Failed to allocate host vectors!\n");
         exit(EXIT_FAILURE);
     }
 
-    // Initialize the host input vectors
-    for (int i = 0; i < numElements; i+=3)
-    {
-        //printf("%d ",img[i]);
-        int t = img[i]*0.299 + img[i+1]*0.587 + img[i+2]*0.114;
-        h_A[i] = t;
-        h_A[i+1] = t;
-        h_A[i+2] = t;
-    }
-    
     // Allocate the device input vector A
-    int *d_A = NULL;
+    char *d_A = NULL;
     err = cudaMalloc((void **)&d_A, size);
 
     if (err != cudaSuccess)
@@ -136,7 +134,7 @@ int main(void)
     // Copy the host input vectors A in host memory to the device input vectors in
     // device memory
     printf("Copy input data from the host memory to the CUDA device\n");
-    err = cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+    err = cudaMemcpy(d_A, img, size, cudaMemcpyHostToDevice);
 
     if (err != cudaSuccess)
     {
@@ -184,16 +182,6 @@ int main(void)
         fprintf(stderr, "Failed to free device vector B (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
-    /*for (int i = 0; i < numElements; ++i)
-    {
-        //printf("%d ",img[i]);
-        img2[i] = h_B[i];
-    }*/
-    /*for (int i = 0; i < numElements; ++i)
-    {
-        printf("%d ", h_B[i]);
-    }*/
-    
     // Free host memory
     // Reset the device and exit
     err = cudaDeviceReset();
@@ -211,7 +199,6 @@ int main(void)
     
     free(nameOutput);
     free(name);
-    free(h_A);
     free(h_B);
     return 0;
 }
