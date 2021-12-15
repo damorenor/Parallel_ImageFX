@@ -15,8 +15,9 @@
 /*******************************************************************************/
 
 __global__ void
-vectorAdd(const int *A, char *B, int numElements, int width)
+vectorAdd(const int *A, char *B, int numElements, int width, int kernelSize)
 {
+    int k;
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     int aux = 0;
     int aux2 = 0;
@@ -24,9 +25,29 @@ vectorAdd(const int *A, char *B, int numElements, int width)
    {
     if (i < numElements)
     {    
-        aux = A[(i*width*3)+ p]* -1 + A[(i*width*3)+p+3] * 0 + A[(i*width*3)+p+6] * 1 + A[(i+1)*width*3 + p]* -2 + A[(i+1)*width*3 + p+3] * 0 + A[(i+1)*width*3 + p+6] * 2 + A[(i+2)*(width*3) + p]* -1 + A[(i+2)*(width*3) + p+3] * 0 + A[(i+2)*(width*3) + p+6] * 1;
-        aux2 = A[(i*width*3) + p]* -1 + A[(i*width*3) + p+3] * -2 + A[(i*width*3)+p+6] * -1 + A[(i+1)*width*3 + p]* 0 + A[(i+1)*width*3 + p+3] * 0 + A[(i+1)*width*3 + p+6] * 0 + A[(i+2)*(width*3) + p]* 1 + A[(i+2)*(width*3) + p+3] * 2 + A[(i+2)*(width*3) + p+6] * 1;
-        B[p+(i*width*3)] = (char) sqrt((float)(aux*aux + aux2*aux2));
+        if(k == 3){
+            aux = A[(i*width*3)+ p]* -1 + A[(i*width*3)+p+3] * 0 + A[(i*width*3)+p+6] * 1 
+                + A[(i+1)*(width*3) + p]* -2 + A[(i+1)*(width*3) + p+3] * 0 + A[(i+1)*(width*3) + p+6] * 2 
+                + A[(i+2)*(width*3) + p]* -1 + A[(i+2)*(width*3) + p+3] * 0 + A[(i+2)*(width*3) + p+6] * 1;
+            aux2= A[(i*width*3) + p]* -1 + A[(i*width*3) + p+3] * -2 + A[(i*width*3)+p+6] * -1 
+                + A[(i+1)*(width*3) + p]* 0 + A[(i+1)*(width*3) + p+3] * 0 + A[(i+1)*(width*3) + p+6] * 0 
+                + A[(i+2)*(width*3) + p]* 1 + A[(i+2)*(width*3) + p+3] * 2 + A[(i+2)*(width*3) + p+6] * 1;
+            B[p+(i*width*3)] = (char) sqrt((float)(aux*aux + aux2*aux2));    
+        }
+        if(k == 5){
+            aux = A[(i*width*3)+ p]* -2 + A[(i*width*3)+p+3] * -1 + A[(i*width*3)+p+6] * 0 + A[(i*width*3)+p+9] * 1 + A[(i*width*3)+p+12] * 2
+                + A[(i+1)*(width*3) + p]* -2 + A[(i+1)*(width*3) + p+3] * -1 + A[(i+1)*(width*3) + p+6] * 0 + A[(i+1)*(width*3) + p+9] * 1 + A[(i+1)*(width*3) + p+12] * 2
+                + A[(i+2)*(width*3) + p]* -4 + A[(i+2)*(width*3) + p+3] * -2 + A[(i+2)*(width*3) + p+6] * 0 + A[(i+2)*(width*3) + p+9] * 2 + A[(i+2)*(width*3) + p+12] * 4
+                + A[(i+3)*(width*3) + p]* -2 + A[(i+3)*(width*3) + p+3] * -1 + A[(i+3)*(width*3) + p+6] * 0 + A[(i+3)*(width*3) + p+9] * 1 + A[(i+3)*(width*3) + p+12] * 2
+                + A[(i+4)*(width*3) + p]* -2 + A[(i+4)*(width*3) + p+3] * -1 + A[(i+4)*(width*3) + p+6] * 0 + A[(i+4)*(width*3) + p+9] * 1 + A[(i+4)*(width*3) + p+12] * 2;
+            aux2= A[(i*width*3)+ p]* -2 + A[(i*width*3)+p+3] * -2 + A[(i*width*3)+p+6] * -4 + A[(i*width*3)+p+9] * -2 + A[(i*width*3)+p+12] * -2
+                + A[(i+1)*(width*3) + p]* -1 + A[(i+1)*(width*3) + p+3] * -1 + A[(i+1)*(width*3) + p+6] * -2 + A[(i+1)*(width*3) + p+9] * -1 + A[(i+1)*(width*3) + p+12] * -1  
+                + A[(i+2)*(width*3) + p]* 0 + A[(i+2)*(width*3) + p+3] * 0 + A[(i+2)*(width*3) + p+6] * 0 + A[(i+2)*(width*3) + p+9] * 0 + A[(i+2)*(width*3) + p+12] * 0
+                + A[(i+3)*(width*3) + p]* 1 + A[(i+3)*(width*3) + p+3] * 1 + A[(i+3)*(width*3) + p+6] * 2 + A[(i+3)*(width*3) + p+9] * 1 + A[(i+3)*(width*3) + p+12] * 1
+                + A[(i+4)*(width*3) + p]* 2 + A[(i+4)*(width*3) + p+3] * 2 + A[(i+4)*(width*3) + p+6] * 4 + A[(i+4)*(width*3) + p+9] * 2 + A[(i+4)*(width*3) + p+12] * 2;
+
+            B[p+(i*width*3)] = (char) sqrt((float)(aux*aux + aux2*aux2));   
+        }
         //printf("hilo %d : %d %d %d %d %d %d %d %d %d con resultado x %d y %d = %d en la posición: %d\n",i, A[(i*width*3)+ p], A[(i*width*3)+p+3], A[(i*width*3)+p+6], A[(i+1)*width*3 + p], A[(i+1)*width*3 + p+3], A[(i+1)*width*3 + p+6], A[(i+2)*(width*3) + p], A[(i+2)*(width*3)+p+3], A[(i+2)*(width*3)+p+6],aux,aux2,B[p+(i*width*3)],p+(i*width*3));
         aux=0;
         aux2 = 0;
@@ -37,7 +58,7 @@ vectorAdd(const int *A, char *B, int numElements, int width)
 /*******************************************************************************/
 int main(void)
 {
-    char *img2;
+    //char *img2;
     char *name;
     char *nameOutput;
     int width, height, channels, kernel;
@@ -66,7 +87,7 @@ int main(void)
     // Print the vector length to be used, and compute its size
     int numElements = pixel_row_num*height;
     size_t size = numElements * sizeof(int);
-    img2 = (char *) malloc(numElements*sizeof(char));
+    //img2 = (char *) malloc(numElements*sizeof(char));
 
     // Allocate the host input vector A
     int *h_A = (int *)malloc(size);
@@ -128,7 +149,7 @@ int main(void)
     int threadsPerBlock = 128;
     int blocksPerGrid =(height + threadsPerBlock - 1) / threadsPerBlock;
     printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
-    vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, height, width);
+    vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, height, width, kernel);
     err = cudaGetLastError();
 
     if (err != cudaSuccess)
