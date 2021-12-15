@@ -15,7 +15,7 @@
 /*******************************************************************************/
 
 __global__ void
-vectorAdd(const int *A, char *B, int numElements, int width, int kernelSize)
+vectorAdd(char *A, char *B, int numElements, int width, int kernelSize)
 {
     int k = kernelSize;
     int i = blockDim.x * blockIdx.x + threadIdx.x;
