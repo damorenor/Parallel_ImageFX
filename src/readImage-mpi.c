@@ -147,6 +147,7 @@ int main(int argc, char **argv)
     free(nameOutput);
     free(name);
     free(img2);
+    free(sub_img2);
     MPI_Finalize();
     return 0;
 }
