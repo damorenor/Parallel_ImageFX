@@ -27,21 +27,17 @@ int main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
     MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
 
-    char *name;
-    char *nameOutput;
+    kernel = 3;
+    threads = 4;
 
     //Matrices de Convolucion
     int kernelx[3][3] = { {-1, 0, 1} ,{-2, 0, 2 },{-1, 0, 1 }};
     int kernelx2[5][5] = { {-2, -1, 0, 1, 2}, {-2, -1, 0, 1, 2} ,{-4, -2, 0, 2, 4}, {-2, -1, 0, 1, 2}, {-2, -1, 0, 1, 2} };
 
     //Informacion de entrada
-    name = malloc(sizeof(char));
-    nameOutput = malloc(sizeof(char));
     //printf("Introduce el nombre de la imagen, el nombre de la nueva imagen y el tamaño del kernel (3 o 5)  separados por un espacio: \n");
-    scanf("%s %s %d %d", name, nameOutput, &kernel, &threads);
-
     omp_set_num_threads(threads);
-
+    
     if(kernel != 3 && kernel != 5){
         exit(1);
     }
@@ -51,10 +47,10 @@ int main(int argc, char **argv)
     sizeKernel = (kernel - 1) / 2;
 
     //Carga de imagen usando laS librerias
-    unsigned char *img = stbi_load(name, &width, &height, &channels, 3);
+    unsigned char *img = stbi_load("messi720.jpg", &width, &height, &channels, 3);
     char *img2, *sub_img2;
     img2 = malloc(width * channels* height*sizeof(char));
-    sub_img2 = malloc(width * channels* height*sizeof(char) / num_procs);
+    sub_img2 = malloc(width * channels* height*sizeof(char));
     int pixel_row_num = width * channels;
     if(img == NULL){
         printf("Error al Cargar Imagen: ");
@@ -63,10 +59,12 @@ int main(int argc, char **argv)
     }
 
     /*----Aplicacion del operador sobel----*/
+    
 
     //Itera por cada fila del arreglo de pixeles
     int chunk_size = (height - sizeKernel*2)/num_procs;
-    int start = chunk_size*process_id, finish = chunk_size*(process_id+1);
+    int start = (chunk_size*process_id)+sizeKernel, finish = chunk_size*(process_id+1)+sizeKernel;
+
 
     #pragma omp parallel for
     for(int j = start; j<finish; j++){
@@ -129,23 +127,21 @@ int main(int argc, char **argv)
             }
             //Insercion de los nuevos pixeles en una nueva imagen
             sub_img2[(i)+(j*pixel_row_num)] =  rAux;
-            sub_img2[(i + 1)+(j*pixel_row_num)] = gAux;
-            sub_img2[(i + 2)+(j*pixel_row_num)] = bAux;
+            sub_img2[(i)+(j*pixel_row_num)] = gAux;
+            sub_img2[(i)+(j*pixel_row_num)] = bAux;
         } 
 
     }
 
     //Creacion de la nueva imagen
-    int tam = width * channels* height*sizeof(char) / num_procs;
-    MPI_Gather(sub_img2, tam, MPI_UNSIGNED_CHAR, img2, tam, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
-    stbi_write_jpg(nameOutput, width, height, channels, img2, 100);
+    int tam = width * channels* height*sizeof(char);
+    MPI_Reduce(sub_img2, img2,tam, MPI_UNSIGNED_CHAR, MPI_SUM, 0, MPI_COMM_WORLD);
+    stbi_write_jpg("messi720-mpi-5.jpg", width, height, channels, img2, 100);
 
     tval_result += MPI_Wtime();
 
-    printf("t: %.6f", tval_result);
+    //printf("%.6f\n", tval_result);
 
-    free(nameOutput);
-    free(name);
     free(img2);
     free(sub_img2);
     MPI_Finalize();
