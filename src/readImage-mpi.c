@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <omp.h>
+#include <mpi.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -51,7 +52,7 @@ int main(int argc, char **argv)
 
     //Carga de imagen usando laS librerias
     unsigned char *img = stbi_load(name, &width, &height, &channels, 3);
-    char *img2;
+    char *img2, sub_img2;
     img2 = malloc(width * channels* height*sizeof(char));
     sub_img2 = malloc(width * channels* height*sizeof(char) / num_procs);
     int pixel_row_num = width * channels;
